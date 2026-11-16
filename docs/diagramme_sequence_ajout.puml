@@ -1,0 +1,51 @@
+@startuml diagramme_sequence_ajout
+skinparam monochrome false
+skinparam shadowing false
+skinparam sequence {
+    ArrowColor #1e3a8a
+    ActorBorderColor #1e3a8a
+    ActorBackgroundColor #eff6ff
+    ParticipantBorderColor #1e3a8a
+    ParticipantBackgroundColor #eff6ff
+    LifeLineBorderColor #1e3a8a
+    BoxBorderColor #1e3a8a
+}
+
+actor Utilisateur
+participant ":Main" as Main
+participant ":GestionCourse" as Gestion
+participant "v:Voiture" as Voiture
+
+Utilisateur -> Main : 1. Choisir "Ajouter une voiture"
+activate Main
+Main --> Utilisateur : Demander id, nom, marque, vitesse
+Utilisateur -> Main : Saisir (id, nom, marque, vitesse)
+
+Main -> Gestion : ajouterVoiture(id, nom, marque, vitesse)
+activate Gestion
+
+Gestion -> Gestion : rechercherVoiture(id)
+
+alt Identifiant déjà existant
+    Gestion --> Main : throw IllegalArgumentException("ID déjà utilisé")
+    Main --> Utilisateur : Afficher message d'erreur (doublon)
+else Identifiant disponible
+    Gestion -> Voiture ** : <<create>> Voiture(id, nom, marque, vitesse)
+    activate Voiture
+    alt Données invalides (vitesse <= 0 ou champ vide)
+        Voiture --> Gestion : throw IllegalArgumentException
+        deactivate Voiture
+        Gestion --> Main : propager exception
+        Main --> Utilisateur : Afficher message d'erreur de saisie
+    else Données valides
+        Voiture --> Gestion : instance v
+        deactivate Voiture
+        Gestion -> Gestion : voitures.put(id, v)
+        Gestion --> Main : confirmation ajout
+        Main --> Utilisateur : Afficher "Voiture ajoutée avec succès"
+    end
+end
+
+deactivate Gestion
+deactivate Main
+@enduml
